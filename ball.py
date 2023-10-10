@@ -2,6 +2,7 @@ import pygame
 import math
 import time
 import sys
+import random
 
 # Dimensiones de la ventana
 WIDTH, HEIGHT = 800, 600
@@ -11,27 +12,84 @@ WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 BLACK = (0,0,0)
+GREEN = (0, 255, 0)
+ORANGE = (255, 165, 0)
+RED = (255, 0, 0)
+LIGHT_BLUE = (173, 216, 230)
 
 posi = []
+wind_acceleration_x = 0.0
+def randomizar_direccion_viento():
+    return random.choice([-1, 1])  # -1 para viento izquierdo, 1 para viento derecho
+
+# Inicializar la dirección del viento
+wind_direction = randomizar_direccion_viento()
+
+# Triángulo para indicar la dirección del viento
+
 
 # Inicialización de Pygame
 pygame.init()
+wind_triangle = pygame.Surface((20, 20), pygame.SRCALPHA)
+pygame.draw.polygon(wind_triangle, RED, [(0, 0), (20, 10), (0, 20)])
+
+
+def mostrar_menu_aceleracion_viento(screen):
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        screen.fill(WHITE)
+
+        cuadro_rect = pygame.Rect(WIDTH // 4, 125, WIDTH // 2, 250)
+        pygame.draw.rect(screen, WHITE, cuadro_rect)
+        pygame.draw.rect(screen, LIGHT_BLUE, cuadro_rect, border_radius=10)  # Esquinas redondeadas
+
+        font = pygame.font.Font(None, 36)
+        text = font.render("Menú de Aceleración del Viento", True, BLUE)
+        text_rect = text.get_rect(center=(WIDTH // 2, 50))
+        screen.blit(text, text_rect)
+
+        opciones = [("1. None", BLACK), ("2. Easy", BLACK), ("3. Medium", BLACK), ("4. Hard", BLACK)]
+        y_position = 150
+
+        for opcion, color in opciones:
+            text = font.render(opcion, True, color)
+            text_rect = text.get_rect(center=(WIDTH // 2, y_position))
+            screen.blit(text, text_rect)
+            y_position += 50
+
+        pygame.display.flip()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_1]:  # Tecla 1 para "None"
+            return 0.0
+        elif keys[pygame.K_2]:  # Tecla 2 para "Easy"
+            return random.uniform(1, 3) * wind_direction
+        elif keys[pygame.K_3]:  # Tecla 3 para "Medium"
+            return random.uniform(3, 6) * wind_direction
+        elif keys[pygame.K_4]:  # Tecla 4 para "Hard"
+            return random.uniform(6, 9) * wind_direction
+
+        time.sleep(0.1)
 
 def colision_circulos(jugador):
-    
+
     y1 = jugador['ball_y']
     x1 = jugador['ball_x']
     r1 = jugador['ball_radius']
     r2 = r1
     x2 = jugador['target_x']
     y2 = jugador['target_y']
-   
+
     distancia = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
     if distancia < r1 + r2:
           return True
     else:
         return False
-    
+
 # Configuración de la ventana
 def configurar_ventana(width, height):
     return pygame.display.set_mode((width, height))
@@ -49,7 +107,7 @@ def reiniciar_juego(jugador):
     jugador['ball_stopped'] = False
 
 # Dibuja la pantalla del juego
-def dibujar_pantalla(screen, jugador, posi = []):
+def dibujar_pantalla(screen, jugador, wind_acceleration_x, posi = []):
     screen.fill(WHITE)
 
     if jugador['show_line']:
@@ -57,7 +115,7 @@ def dibujar_pantalla(screen, jugador, posi = []):
         line_end_x = jugador['ball_x'] + line_length * math.cos(jugador['angle_radians'])
         line_end_y = jugador['ball_y'] - line_length * math.sin(jugador['angle_radians'])
         pygame.draw.line(screen, RED, (jugador['ball_x'], jugador['ball_y']), (line_end_x, line_end_y), 2)
-    
+
         # Mostrar velocidad inicial cerca de la pelota
         font = pygame.font.Font(None, 20)
         speed_text = font.render(f"Velocidad: {int(jugador['initial_speed'])}", True, BLACK)
@@ -70,6 +128,22 @@ def dibujar_pantalla(screen, jugador, posi = []):
     pygame.draw.circle(screen, BLUE, (int(jugador['ball_x']), int(jugador['ball_y'])), jugador['ball_radius'])
     pygame.draw.circle(screen, RED, (int(jugador['target_x']), int(jugador['target_y'])), jugador['ball_radius'])
 
+    wind_symbol = pygame.Surface((20, 20), pygame.SRCALPHA)
+    if wind_acceleration_x==0.0:
+        pygame.draw.line(wind_symbol, BLACK, (0, 0), (20, 20), 2)
+        pygame.draw.line(wind_symbol, BLACK, (0, 20), (20, 0), 2)
+    elif wind_direction == -1:
+        # Dibuja un triángulo que apunta hacia la izquierda
+        pygame.draw.polygon(wind_symbol, BLACK, [(0, 10), (20, 0), (20, 20)])
+    elif wind_direction == 1:
+        # Dibuja un triángulo que apunta hacia la derecha
+        pygame.draw.polygon(wind_symbol, BLACK, [(0, 0), (20, 10), (0, 20)])
+    else:
+        # Dibuja un círculo para indicar ninguna dirección del viento
+        pygame.draw.line(wind_symbol, BLACK, (0, 0), (20, 20), 2)
+        pygame.draw.line(wind_symbol, BLACK, (0, 20), (20, 0), 2)
+
+    screen.blit(wind_symbol, (10, 10))
 
     font = pygame.font.Font(None, 36)
     text = font.render(f"Jugador {jugador['numero']}", True, BLUE)
@@ -77,6 +151,14 @@ def dibujar_pantalla(screen, jugador, posi = []):
     screen.blit(text, text_rect)
 
     pygame.display.flip()
+
+def wind_direction_label():
+    if wind_direction == -1:
+        return "Izquierda"
+    elif wind_direction == 1:
+        return "Derecha"
+    else:
+        return "Ninguna"
 
 # Función principal del juego
 def jugar_juego():
@@ -128,7 +210,8 @@ def jugar_juego():
     # Marca el tiempo de inicio
     start_time = time.time()
     posi = []
-
+    wind_acceleration_x = mostrar_menu_aceleracion_viento(screen)
+    print("Aceleración es: ", wind_acceleration_x)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -141,6 +224,7 @@ def jugar_juego():
         if not jugador_actual['ball_stopped']:
             if keys[pygame.K_RETURN] and not jugador_actual['pressed_enter']:
                 # Si se presiona Enter y el movimiento no ha comenzado
+                tiempo_inicio_disparo = time.time()
                 posi = []
                 jugador_actual['pressed_enter'] = True
                 jugador_actual['angle_radians'] = math.radians(jugador_actual['angle_degrees'])
@@ -163,7 +247,9 @@ def jugar_juego():
         if jugador_actual['pressed_enter'] and not jugador_actual['ball_stopped']:
             # Actualiza la posición de la pelota en función del tiempo si se ha presionado Enter
             jugador_actual['show_line'] = False
-            jugador_actual['ball_x'] += jugador_actual['initial_speed_x']
+            tiempo_transcurrido = time.time() - tiempo_inicio_disparo
+            jugador_actual['ball_x'] = 0.5 * wind_acceleration_x * tiempo_transcurrido ** 2 + jugador_actual[
+                'initial_speed_x'] + jugador_actual['ball_x']
             jugador_actual['ball_y'] += jugador_actual['initial_speed_y']
             try:
                 if jugador_actual['pressed_enter']:
@@ -196,10 +282,10 @@ def jugar_juego():
                     jugadores[1]['current'] = False
                     jugadores[0]['current'] = True
 
-                
+
 
         # Dibuja la pantalla solo para el jugador actual
-        dibujar_pantalla(screen, jugador_actual, posi)
+        dibujar_pantalla(screen, jugador_actual,wind_acceleration_x, posi)
 
         # Agrega un pequeño retraso para ralentizar la visualización
         time.sleep(0.02)  # Ajusta el valor según la velocidad deseada
