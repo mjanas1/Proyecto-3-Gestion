@@ -30,6 +30,47 @@ obstacle_options = {
     "Hard": (obstacle_width, obstacle_height+300+random_height,WIDTH // 2 - 25,  obstacle_y-300-random_height)  # Obstáculo grande
 }
 
+def mostrar_configuracion(screen, wind_acceleration_x, obstacle_description):
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        screen.fill(WHITE)
+
+        cuadro_rect = pygame.Rect(WIDTH // 4, 125, WIDTH // 2, 250)
+        pygame.draw.rect(screen, WHITE, cuadro_rect)
+        pygame.draw.rect(screen, LIGHT_BLUE, cuadro_rect, border_radius=10)
+
+        font = pygame.font.Font(None, 36)
+        text = font.render("Configuración de Juego", True, BLUE)
+        text_rect = text.get_rect(center=(WIDTH // 2, 50))
+        screen.blit(text, text_rect)
+
+        # Muestra los valores configurados de viento y obstáculo
+        wind_text = font.render(f"Aceleración del Viento: {wind_acceleration_x:.2f}", True, BLACK)
+        wind_text_rect = wind_text.get_rect(center=(WIDTH // 2, 150))
+        screen.blit(wind_text, wind_text_rect)
+
+        obstacle_text = font.render(f"Obstáculo: {obstacle_description}", True, BLACK)
+        obstacle_text_rect = obstacle_text.get_rect(center=(WIDTH // 2, 200))
+        screen.blit(obstacle_text, obstacle_text_rect)
+
+        # Dibuja el botón de inicio
+        iniciar_juego_text = font.render("Iniciar Juego", True, BLACK)
+        iniciar_juego_rect = iniciar_juego_text.get_rect(center=(WIDTH // 2, 300))
+        pygame.draw.rect(screen, GREEN_LIGHT, iniciar_juego_rect, border_radius=10)
+        screen.blit(iniciar_juego_text, iniciar_juego_rect)
+
+        pygame.display.flip()
+
+        # Verifica si se hizo clic en el botón de inicio
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        if iniciar_juego_rect.collidepoint(mouse_x, mouse_y):
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    return
 
 def mostrar_mensaje_ganador(screen, ganador):
     font = pygame.font.Font(None, 36)
@@ -333,6 +374,8 @@ def jugar_juego():
     while not obstaculo_configurado:
         obstacle_width, obstacle_height, obstacle_x, obstacle_y = mostrar_menu_obstaculo(screen)
         obstaculo_configurado = True
+    mostrar_configuracion(screen, wind_acceleration_x, obstacle_height)
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
