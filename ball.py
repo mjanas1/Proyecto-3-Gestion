@@ -16,11 +16,65 @@ GREEN = (0, 255, 0)
 ORANGE = (255, 165, 0)
 RED = (255, 0, 0)
 LIGHT_BLUE = (173, 216, 230)
+GREEN_LIGHT = (144, 238, 144)
 
 obstacle_x = WIDTH // 2 - 25  # Coordenada x del centro del obstáculo
 obstacle_y = HEIGHT - 100  # Coordenada y del obstáculo (ajustado para que sea más alto)
 obstacle_width = 50  # Ancho del obstáculo
 obstacle_height = 80
+random_height = random.uniform(0, 100)
+obstacle_options = {
+    "None": (0, 0, 0, 0),  # No hay obstáculo
+    "Easy": (obstacle_width, obstacle_height+random_height, WIDTH // 2 - 25, obstacle_y-random_height),  # Obstáculo pequeño
+    "Medium": (obstacle_width, obstacle_height+100+random_height, WIDTH // 2 - 25,  obstacle_y-100-random_height),  # Obstáculo mediano
+    "Hard": (obstacle_width, obstacle_height+300+random_height,WIDTH // 2 - 25,  obstacle_y-300-random_height)  # Obstáculo grande
+}
+
+def mostrar_menu_obstaculo(screen):
+    selected_option = "None"
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        screen.fill(WHITE)
+
+        cuadro_rect = pygame.Rect(WIDTH // 4, 125, WIDTH // 2, 250)
+        pygame.draw.rect(screen, WHITE, cuadro_rect)
+        pygame.draw.rect(screen, GREEN_LIGHT, cuadro_rect, border_radius=10)
+
+        font = pygame.font.Font(None, 36)
+        text = font.render("Menú de Obstáculo", True, BLUE)
+        text_rect = text.get_rect(center=(WIDTH // 2, 50))
+        screen.blit(text, text_rect)
+
+        opciones = [("5. None", BLACK), ("6. Easy", BLACK), ("7. Medium", BLACK), ("8. Hard", BLACK)]
+        y_position = 150
+
+        for opcion, color in opciones:
+            text = font.render(opcion, True, color)
+            text_rect = text.get_rect(center=(WIDTH // 2, y_position))
+            screen.blit(text, text_rect)
+            y_position += 50
+
+        pygame.display.flip()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_5]:
+            selected_option = "None"
+            return obstacle_options[selected_option]
+        elif keys[pygame.K_6]:
+            selected_option = "Easy"
+            return obstacle_options[selected_option]
+        elif keys[pygame.K_7]:
+            selected_option = "Medium"
+            return obstacle_options[selected_option]
+        elif keys[pygame.K_8]:
+            selected_option = "Hard"
+            return obstacle_options[selected_option]
+
+        time.sleep(0.1)
 
 def colision_obstaculo(jugador, obstacle_x, obstacle_y, obstacle_width, obstacle_height):
     # Verificar colisión entre la pelota y el obstáculo
@@ -123,7 +177,8 @@ def reiniciar_juego(jugador):
     jugador['ball_stopped'] = False
 
 # Dibuja la pantalla del juego
-def dibujar_pantalla(screen, jugador, wind_acceleration_x, posi = []):
+def dibujar_pantalla(screen, jugador, wind_acceleration_x, obstacle_x, obstacle_y, obstacle_width, obstacle_height,
+                         posi):
     screen.fill(WHITE)
     pygame.draw.rect(screen, GREEN, (obstacle_x, obstacle_y, obstacle_width, obstacle_height))
     if jugador['show_line']:
@@ -226,8 +281,27 @@ def jugar_juego():
     # Marca el tiempo de inicio
     start_time = time.time()
     posi = []
-    wind_acceleration_x = mostrar_menu_aceleracion_viento(screen)
-    print("Aceleración es: ", wind_acceleration_x)
+    # Variable para controlar si se configuró la aceleración del viento y el obstáculo
+    aceleracion_configurada = False
+
+    # Variable para almacenar la aceleración del viento
+    wind_acceleration_x = 0.0
+
+    # Bucle para configurar la aceleración del viento
+    while not aceleracion_configurada:
+        wind_acceleration_x = mostrar_menu_aceleracion_viento(screen)
+        print("Aceleración es: ", wind_acceleration_x)
+        aceleracion_configurada = True
+
+    # Variable para almacenar la configuración del obstáculo
+    obstacle_width, obstacle_height, obstacle_x, obstacle_y = (0, 0, 0, 0)
+
+    # Bucle para configurar el obstáculo
+    obstaculo_configurado = False
+
+    while not obstaculo_configurado:
+        obstacle_width, obstacle_height, obstacle_x, obstacle_y = mostrar_menu_obstaculo(screen)
+        obstaculo_configurado = True
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -293,7 +367,8 @@ def jugar_juego():
                 while jugador_actual['ball_y'] < HEIGHT - jugador_actual['ball_radius']:
                     # Simula la caída de la pelota
                     jugador_actual['ball_y'] += 5  # Puedes ajustar la velocidad de caída según tus preferencias
-                    dibujar_pantalla(screen, jugador_actual, wind_acceleration_x, posi)
+                    dibujar_pantalla(screen, jugador_actual, wind_acceleration_x,obstacle_x, obstacle_y, obstacle_width,
+                         obstacle_height, posi)
                     #time.sleep(0.02)  # Ajusta el valor según la velocidad de caída deseada
                 time.sleep(0.5)  # Espera 0.5 segundos antes de reiniciar el juego
                 reiniciar_juego(jugador_actual)
@@ -320,8 +395,8 @@ def jugar_juego():
 
 
         # Dibuja la pantalla solo para el jugador actual
-        dibujar_pantalla(screen, jugador_actual,wind_acceleration_x, posi)
-
+        dibujar_pantalla(screen, jugador_actual, wind_acceleration_x, obstacle_x, obstacle_y, obstacle_width,
+                         obstacle_height, posi)
         # Agrega un pequeño retraso para ralentizar la visualización
         time.sleep(0.02)  # Ajusta el valor según la velocidad deseada
 
