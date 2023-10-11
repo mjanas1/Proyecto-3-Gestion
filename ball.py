@@ -30,6 +30,37 @@ obstacle_options = {
     "Hard": (obstacle_width, obstacle_height+300+random_height,WIDTH // 2 - 25,  obstacle_y-300-random_height)  # Obstáculo grande
 }
 
+
+def mostrar_mensaje_ganador(screen, ganador):
+    font = pygame.font.Font(None, 36)
+    text = font.render(f"Ganador Jugador {ganador}", True, BLUE)
+    text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+    screen.blit(text, text_rect)
+
+    volver_a_jugar_text = font.render("1. Volver a Jugar", True, BLACK)
+    volver_a_jugar_rect = volver_a_jugar_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
+    screen.blit(volver_a_jugar_text, volver_a_jugar_rect)
+
+    salir_del_juego_text = font.render("2. Salir del Juego", True, BLACK)
+    salir_del_juego_rect = salir_del_juego_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 100))
+    screen.blit(salir_del_juego_text, salir_del_juego_rect)
+
+    pygame.display.flip()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    # Volver a jugar
+                    return True
+                elif event.key == pygame.K_2:
+                    # Salir del juego
+                    pygame.quit()
+                    sys.exit()
+
 def mostrar_menu_obstaculo(screen):
     selected_option = "None"
     while True:
@@ -352,6 +383,9 @@ def jugar_juego():
 
             # Verifica si la pelota ha colisionado con el suelo
             if colision_circulos(jugador_actual):
+                if mostrar_mensaje_ganador(screen, jugador_actual['numero']):
+                    time.sleep(1)
+                    jugar_juego()
                 font = pygame.font.Font(None, 36)
                 text = font.render(f"Jugador {jugador_actual['numero']} Gana el juego", True, BLUE)
                 text_rect = text.get_rect(center=(WIDTH // 2, 50))
