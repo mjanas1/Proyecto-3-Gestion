@@ -17,6 +17,22 @@ ORANGE = (255, 165, 0)
 RED = (255, 0, 0)
 LIGHT_BLUE = (173, 216, 230)
 
+obstacle_x = WIDTH // 2 - 25  # Coordenada x del centro del obstáculo
+obstacle_y = HEIGHT - 100  # Coordenada y del obstáculo (ajustado para que sea más alto)
+obstacle_width = 50  # Ancho del obstáculo
+obstacle_height = 80
+
+def colision_obstaculo(jugador, obstacle_x, obstacle_y, obstacle_width, obstacle_height):
+    # Verificar colisión entre la pelota y el obstáculo
+    x1 = jugador['ball_x']
+    y1 = jugador['ball_y']
+    r1 = jugador['ball_radius']
+
+    if obstacle_x <= x1 <= obstacle_x + obstacle_width and obstacle_y <= y1 + r1:
+        return True
+    else:
+        return False
+
 posi = []
 wind_acceleration_x = 0.0
 def randomizar_direccion_viento():
@@ -109,7 +125,7 @@ def reiniciar_juego(jugador):
 # Dibuja la pantalla del juego
 def dibujar_pantalla(screen, jugador, wind_acceleration_x, posi = []):
     screen.fill(WHITE)
-
+    pygame.draw.rect(screen, GREEN, (obstacle_x, obstacle_y, obstacle_width, obstacle_height))
     if jugador['show_line']:
         line_length = 20
         line_end_x = jugador['ball_x'] + line_length * math.cos(jugador['angle_radians'])
@@ -270,6 +286,25 @@ def jugar_juego():
                 sys.exit()
 
                 pygame.display.flip()
+
+            if colision_obstaculo(jugador_actual, obstacle_x, obstacle_y, obstacle_width, obstacle_height):
+                print(f"La pelota del jugador {jugador_actual['numero']} ha colisionado con el obstáculo.")
+                #time.sleep(0.5)  # Espera 0.5 segundos antes de la caída
+                while jugador_actual['ball_y'] < HEIGHT - jugador_actual['ball_radius']:
+                    # Simula la caída de la pelota
+                    jugador_actual['ball_y'] += 5  # Puedes ajustar la velocidad de caída según tus preferencias
+                    dibujar_pantalla(screen, jugador_actual, wind_acceleration_x, posi)
+                    #time.sleep(0.02)  # Ajusta el valor según la velocidad de caída deseada
+                time.sleep(0.5)  # Espera 0.5 segundos antes de reiniciar el juego
+                reiniciar_juego(jugador_actual)
+                # Cambiar al otro jugador
+                if jugador_actual['numero'] == 1:
+                    jugadores[0]['current'] = False
+                    jugadores[1]['current'] = True
+                elif jugador_actual['numero'] == 2:
+                    jugadores[1]['current'] = False
+                    jugadores[0]['current'] = True
+
             if jugador_actual['ball_y'] >= HEIGHT - jugador_actual['ball_radius']:
                 print(f"La pelota del jugador {jugador_actual['numero']} ha alcanzado el suelo.")
                 time.sleep(0.5)  # Espera 2 segundos antes de reiniciar el juego
